@@ -5,17 +5,17 @@ const submitDonation = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { foodType, quantity, expiryDate, pickupLocation } = req.body;
+    const { foodName, quantityKg, expiryDate, pickupAddress } = req.body;
 
-    if (!foodType || quantity === undefined || !expiryDate || !pickupLocation) {
+    if (!foodName || quantityKg === undefined || !expiryDate || !pickupAddress) {
       await transaction.rollback();
       return res.status(400).json({
         message:
-          "foodType, quantity, expiryDate, and pickupLocation are required.",
+          "foodName, quantityKg, expiryDate, and pickupAddress are required.",
       });
     }
 
-    const quantityValue = Number(quantity);
+    const quantityValue = Number(quantityKg);
     if (Number.isNaN(quantityValue) || quantityValue <= 0.1 || quantityValue > 10000) {
       await transaction.rollback();
       return res.status(400).json({
@@ -40,9 +40,9 @@ const submitDonation = async (req, res) => {
     const donation = await FoodDonation.create(
       {
         donorId: req.user.id,
-        foodName: foodType,
+        foodName,
         quantityKg: quantityValue,
-        pickupAddress: pickupLocation,
+        pickupAddress,
         expiryDate: parsedExpiryDate,
         currentState: "SUBMITTED",
       },
@@ -67,15 +67,37 @@ const submitDonation = async (req, res) => {
       donation: {
         id: donation.id,
         donorId: donation.donorId,
-        foodType: donation.foodName,
-        quantity: donation.quantityKg,
+        foodName: donation.foodName,
+        quantityKg: donation.quantityKg,
         expiryDate: donation.expiryDate,
-        pickupLocation: donation.pickupAddress,
-        status: donation.currentState,
+        pickupAddress: donation.pickupAddress,
+        currentState: donation.currentState,
       },
     });
   } catch (error) {
     await transaction.rollback();
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getMyDonations = async (req, res) => {
+  try {
+    const donations = await FoodDonation.findAll({
+      where: { donorId: req.user.id },
+      order: [["createdAt", "DESC"]],
+      attributes: [
+        "id",
+        "foodName",
+        "quantityKg",
+        "expiryDate",
+        "pickupAddress",
+        "currentState",
+        "createdAt",
+      ],
+    });
+
+    return res.status(200).json({ donations });
+  } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
@@ -187,6 +209,7 @@ const acceptDonation = async (req, res) => {
 
 module.exports = {
   submitDonation,
+  getMyDonations,
   getAvailableDonations,
   acceptDonation,
 };

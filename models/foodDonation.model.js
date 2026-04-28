@@ -47,7 +47,8 @@ module.exports = (sequelize) => {
           "ACCEPTED",
           "IN_TRANSIT",
           "FULFILLED",
-          "REJECTED"
+          "REJECTED",
+          "EXPIRED"
         ),
         allowNull: false,
         defaultValue: "SUBMITTED",

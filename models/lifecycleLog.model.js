@@ -28,7 +28,8 @@ module.exports = (sequelize) => {
           "ACCEPTED",
           "IN_TRANSIT",
           "FULFILLED",
-          "REJECTED"
+          "REJECTED",
+          "EXPIRED"
         ),
         allowNull: true,
       },
@@ -39,7 +40,8 @@ module.exports = (sequelize) => {
           "ACCEPTED",
           "IN_TRANSIT",
           "FULFILLED",
-          "REJECTED"
+          "REJECTED",
+          "EXPIRED"
         ),
         allowNull: false,
       },

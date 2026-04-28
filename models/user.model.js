@@ -35,6 +35,11 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: true,
       },
+      strikes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       failedAttempts: {
         type: DataTypes.INTEGER,
         allowNull: false,
