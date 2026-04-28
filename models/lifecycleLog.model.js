@@ -22,11 +22,25 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
       fromState: {
-        type: DataTypes.ENUM("SUBMITTED", "INSPECTED", "ACCEPTED"),
+        type: DataTypes.ENUM(
+          "SUBMITTED",
+          "INSPECTED",
+          "ACCEPTED",
+          "IN_TRANSIT",
+          "FULFILLED",
+          "REJECTED"
+        ),
         allowNull: true,
       },
       toState: {
-        type: DataTypes.ENUM("SUBMITTED", "INSPECTED", "ACCEPTED"),
+        type: DataTypes.ENUM(
+          "SUBMITTED",
+          "INSPECTED",
+          "ACCEPTED",
+          "IN_TRANSIT",
+          "FULFILLED",
+          "REJECTED"
+        ),
         allowNull: false,
       },
       remarks: {

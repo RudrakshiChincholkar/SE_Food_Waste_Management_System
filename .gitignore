@@ -1,3 +1,4 @@
 .env
 .cursorrules
 node_modules/
+.gitignore

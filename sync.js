@@ -9,7 +9,7 @@ async function syncDatabase() {
 
     // 2. Sync models (This is the "Magic" that creates tables)
     // force: false means it won't delete your data if the table already exists
-    await sequelize.sync({ force: false }); 
+    await sequelize.sync({ alter: true }); 
     console.log('✅ All 9 tables have been created in fdlms_db.');
 
     process.exit(0);

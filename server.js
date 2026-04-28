@@ -1,12 +1,18 @@
 require("dotenv").config();
 const express = require("express");
 const authRoutes = require("./routes/authRoutes");
+const donationRoutes = require("./routes/donationRoutes");
+const inspectionRoutes = require("./routes/inspectionRoutes");
+const deliveryRoutes = require("./routes/deliveryRoutes");
 const { sequelize } = require("./models");
 
 const app = express();
 
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/donations", donationRoutes);
+app.use("/api/inspections", inspectionRoutes);
+app.use("/api/delivery", deliveryRoutes);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });

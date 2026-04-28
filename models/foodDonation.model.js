@@ -13,6 +13,14 @@ module.exports = (sequelize) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
+      recipientNgoId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      deliveryPartnerId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
       foodName: {
         type: DataTypes.STRING(150),
         allowNull: false,
@@ -24,12 +32,23 @@ module.exports = (sequelize) => {
           min: 0.1,
         },
       },
+      expiryDate: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
       pickupAddress: {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
       currentState: {
-        type: DataTypes.ENUM("SUBMITTED", "INSPECTED", "ACCEPTED"),
+        type: DataTypes.ENUM(
+          "SUBMITTED",
+          "INSPECTED",
+          "ACCEPTED",
+          "IN_TRANSIT",
+          "FULFILLED",
+          "REJECTED"
+        ),
         allowNull: false,
         defaultValue: "SUBMITTED",
       },
@@ -66,6 +85,16 @@ module.exports = (sequelize) => {
     FoodDonation.hasMany(models.InspectionReport, {
       foreignKey: "donationId",
       as: "inspectionReports",
+    });
+
+    FoodDonation.belongsTo(models.User, {
+      foreignKey: "recipientNgoId",
+      as: "recipientNgo",
+    });
+
+    FoodDonation.belongsTo(models.User, {
+      foreignKey: "deliveryPartnerId",
+      as: "deliveryPartner",
     });
   };
 
