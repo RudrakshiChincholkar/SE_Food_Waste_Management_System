@@ -54,16 +54,19 @@ const restrictTo = (...roles) => {
       return res.status(401).json({ message: "Unauthorized." });
     }
 
-    if (!roles.includes(req.user.role.name)) {
+    // Normalize both to Uppercase to prevent "NGO" vs "ngo" mismatches
+    const userRole = req.user.role.name.toUpperCase();
+    const allowedRoles = roles.map(r => r.toUpperCase());
+
+    if (!allowedRoles.includes(userRole)) {
       await createAuditEntry({
         actorUserId: req.user.id,
         action: "RBAC_ACCESS_DENIED",
         entityType: "Authorization",
         entityId: req.user.id,
         metadata: {
-          role: req.user.role.name,
-          allowedRoles: roles,
-          method: req.method,
+          userRole: userRole,
+          allowedRoles: allowedRoles,
           path: req.originalUrl,
         },
       });

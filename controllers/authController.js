@@ -47,7 +47,8 @@ const registerUser = async ({ fullName, email, password, phone, roleId, roleName
   if (roleId) {
     role = await Role.findByPk(roleId);
   } else {
-    role = await Role.findOne({ where: { name: roleName } });
+    // Force the incoming roleName to uppercase before searching
+    role = await Role.findOne({ where: { name: roleName.toUpperCase() } });
   }
 
   if (!role) {
