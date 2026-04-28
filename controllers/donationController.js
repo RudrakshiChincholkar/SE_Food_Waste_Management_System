@@ -1,5 +1,5 @@
 const { FoodDonation, LifecycleLog, InspectionReport, User, sequelize } = require("../models");
-const { OptimisticLockError } = require("sequelize");
+const { Op, OptimisticLockError } = require("sequelize");
 
 const submitDonation = async (req, res) => {
   const transaction = await sequelize.transaction();
@@ -150,6 +150,56 @@ const getMyDonations = async (req, res) => {
           currentState: d.currentState,
           createdAt: d.createdAt,
           donor: d.donor ? { id: d.donor.id, fullName: d.donor.fullName } : null,
+        })),
+      });
+    }
+    if (roleName === "DELIVERY_PARTNER") {
+      const donations = await FoodDonation.findAll({
+        where: {
+          [Op.or]: [
+            { currentState: "ACCEPTED" },
+            { currentState: "IN_TRANSIT", deliveryPartnerId: req.user.id },
+          ],
+        },
+        order: [["createdAt", "DESC"]],
+        include: [
+          {
+            model: User,
+            as: "donor",
+            attributes: ["id", "fullName"],
+          },
+          {
+            model: User,
+            as: "recipientNgo",
+            attributes: ["id", "fullName"],
+          },
+        ],
+        attributes: [
+          "id",
+          "foodName",
+          "quantityKg",
+          "expiryDate",
+          "pickupAddress",
+          "currentState",
+          "createdAt",
+          "deliveryPartnerId",
+        ],
+      });
+
+      return res.status(200).json({
+        donations: donations.map((d) => ({
+          id: d.id,
+          foodName: d.foodName,
+          quantityKg: d.quantityKg,
+          expiryDate: d.expiryDate,
+          pickupAddress: d.pickupAddress,
+          currentState: d.currentState,
+          createdAt: d.createdAt,
+          deliveryPartnerId: d.deliveryPartnerId,
+          donor: d.donor ? { id: d.donor.id, fullName: d.donor.fullName } : null,
+          recipientNgo: d.recipientNgo
+            ? { id: d.recipientNgo.id, fullName: d.recipientNgo.fullName }
+            : null,
         })),
       });
     }
@@ -353,10 +403,110 @@ const inspectDonation = async (req, res) => {
   }
 };
 
+const startPickup = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const donation = await FoodDonation.findByPk(id, { transaction });
+
+    if (!donation) {
+      await transaction.rollback();
+      return res.status(404).json({ message: "Donation not found." });
+    }
+
+    if (donation.currentState !== "ACCEPTED") {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Only ACCEPTED donations can be picked up.",
+      });
+    }
+
+    await donation.update(
+      { currentState: "IN_TRANSIT", deliveryPartnerId: req.user.id },
+      { transaction }
+    );
+
+    await LifecycleLog.create(
+      {
+        donationId: donation.id,
+        actorUserId: req.user.id,
+        fromState: "ACCEPTED",
+        toState: "IN_TRANSIT",
+        remarks: "Pickup started by delivery partner.",
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+    return res.status(200).json({
+      message: "Pickup started successfully.",
+      donation: {
+        id: donation.id,
+        currentState: "IN_TRANSIT",
+        deliveryPartnerId: req.user.id,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const confirmDelivery = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const donation = await FoodDonation.findByPk(id, { transaction });
+
+    if (!donation) {
+      await transaction.rollback();
+      return res.status(404).json({ message: "Donation not found." });
+    }
+
+    if (donation.currentState !== "IN_TRANSIT") {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Only IN_TRANSIT donations can be delivered.",
+      });
+    }
+
+    if (donation.deliveryPartnerId !== req.user.id) {
+      await transaction.rollback();
+      return res.status(403).json({
+        message: "Forbidden. This delivery is assigned to another partner.",
+      });
+    }
+
+    await donation.update({ currentState: "FULFILLED" }, { transaction });
+
+    await LifecycleLog.create(
+      {
+        donationId: donation.id,
+        actorUserId: req.user.id,
+        fromState: "IN_TRANSIT",
+        toState: "FULFILLED",
+        remarks: "Delivery completed by delivery partner.",
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+    return res.status(200).json({
+      message: "Delivery confirmed successfully.",
+      donation: { id: donation.id, currentState: "FULFILLED" },
+    });
+  } catch (error) {
+    await transaction.rollback();
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   submitDonation,
   getMyDonations,
   getAvailableDonations,
   acceptDonation,
   inspectDonation,
+  startPickup,
+  confirmDelivery,
 };

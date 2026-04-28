@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import api from "../api/axios";
 import AvailableMarketplace from "../components/marketplace/AvailableMarketplace";
 import InspectionQueue from "../components/inspector/InspectionQueue";
+import DeliveryQueue from "../components/delivery/DeliveryQueue";
 
 const statusClasses = {
   SUBMITTED: "bg-blue-50 text-blue-700 border-blue-200",
@@ -175,6 +176,21 @@ export default function DonorDashboard() {
             </p>
           </div>
           <InspectionQueue
+            donations={donations}
+            onActionDone={loadDonations}
+            showToast={showToast}
+          />
+        </section>
+      ) : role === "DELIVERY_PARTNER" ? (
+        <section className="space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-5">
+            <h2 className="text-lg font-semibold text-amber-900">Delivery Queue</h2>
+            <p className="mt-1 text-sm text-amber-800/80">
+              Track pickup and drop-off tasks. Start pickup for accepted donations, then
+              confirm delivery once dropped at the assigned NGO.
+            </p>
+          </div>
+          <DeliveryQueue
             donations={donations}
             onActionDone={loadDonations}
             showToast={showToast}
